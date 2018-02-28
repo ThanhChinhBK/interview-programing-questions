@@ -6,7 +6,7 @@ using namespace std;
 void printKMax(int arr[], int n, int k){
   deque <int> deq;
   for(int i=0;i<n;i++){
-    while(!deq.empty() && arr[i] > deq.back()) deq.pop_back();
+    while(!deq.empty() && arr[i] > deq.back()) deq.pop_back(); //deq.front() is always maximum element 
     deq.push_back(arr[i]);
     if(i >= k && arr[i-k] == deq.front()) deq.pop_front();
     if(i >= k-1) printf(i < n-1? "%d ":"%d\n", deq.front());
