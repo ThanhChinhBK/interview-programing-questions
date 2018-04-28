@@ -1,0 +1,27 @@
+{
+   "usage":{
+      "text_characters":7653,
+      "features":2,
+      "text_units":1
+   },
+   "emotion":{
+      "document":{
+         "emotion":{
+            "anger":0.085554,
+            "joy":0.526103,
+            "sadness":0.533085,
+            "fear":0.148549,
+            "disgust":0.078346
+         }
+      }
+   },
+   "language":"en",
+   "sentiment":{
+      "document":{
+         "score":-0.323271,
+         "label":"negative"
+      }
+   },
+   "retrieved_url":"http://blogs.plos.org/speakingofmedicine/2017/01/20/the-why-vaccines-dont-cause-autism-papers/"
+}
+
