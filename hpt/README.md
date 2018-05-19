@@ -30,7 +30,9 @@ Môt hệ phân tán phải thích nghi với sự thay đổi quy mô của h�
 Giải pháp: Chia nhỏ (vd: DNS) 
 
 ### 3. Các thành phần hệ phân tán
+
 ####3.1. Phần cứng
+
 #####a. Hệ đa vi xử lý
 ![các loại hệ đa vi xử lý](img/multi_process.png)
 
@@ -48,13 +50,13 @@ Giải pháp: Chia nhỏ (vd: DNS)
 
 ##### a. Dos (Distributed OS)
 
-![](C:\Users\Nguyen Chinh\Desktop\hpt\img\dos.png)
+![](img\dos.png)
 
 Hệ điều hành duy nhất được cài đặt trên tất cả hệ thống phần cứng của hệ thống,  các vấn đề của hệ phân tán được xử lý ở tầng hệ điều hành. Người sử dụng không cần quan tâm đến các chi tiết của hệ phân tán, múc trong suốt tuyệt đối. 
 
 ##### b. NOS (Network OS)
 
-![](C:\Users\Nguyen Chinh\Desktop\hpt\img\nos.png)
+![](img\nos.png)
 
 Bổ sung thêm các tính năng vào các hệ điều hành cục bộ, cho phép tiến trình có thể sủ dùng hạ tầng mạng máy tính để kết nối và giao tiếp với nhau. Người xây dựng ứng dụng phải cung cấp các cơ chế để trao đổi thông tin với nhau (UDP, TCP, ..). người xây dựng ứng dụng phải xử lý những vấn đề của hệ phân tán. Thường dùng cho các hệ không thuần nhất.
 
