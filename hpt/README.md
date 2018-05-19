@@ -31,9 +31,9 @@ Giải pháp: Chia nhỏ (vd: DNS)
 
 ### 3. Các thành phần hệ phân tán
 
-####3.1. Phần cứng
+#### 3.1. Phần cứng
 
-#####a. Hệ đa vi xử lý
+##### a. Hệ đa vi xử lý
 ![các loại hệ đa vi xử lý](img/multi_process.png)
 
 * Các bộ vi xử lý kết nối với nhau và với modun nhớ thông qua trục bus của hệ thống -> khi một cặp sử dụng trục thì cặp khác không sử dụng được -> tăng thời gian chờ
@@ -62,7 +62,7 @@ Bổ sung thêm các tính năng vào các hệ điều hành cục bộ, cho ph
 
 ##### c. **Middleware** 
 
-![](C:\Users\Nguyen Chinh\Desktop\hpt\img\middleware.png)
+![](img\middleware.png)
 
 Nằm giữa nos và tầng ứng dụng phân tán. Là các thư viện các framework cung cấp các cơ chế giao tiếp trao đổi trong hệ phân tán, cho phép lập trình viên sử dụng để phát triển ứng dụng như môt thư viên có sẵn mà không phải lâp trình lại. Tức là trong trường hợp lý tưởng, hệ thống sẽ trở nên trong suốt đốio với người xây dựng ứng dụng!
 
