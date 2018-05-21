@@ -76,7 +76,6 @@ MiddleWare cung cấp các dịch vụ:
 - Bảo mật 
 - Các dịch vụ khác
 
-
 Có thể nói MiddleWare thừa kế những ưu điểm tử cả DOS (tính trong suốt cao) và NOS (tính mở, tính co giãn cao)
 
 ## Chương 2: Kiến trúc
@@ -192,6 +191,102 @@ Server triển khai ở biên mạng (danh giới cùa mạng doanh nghiệp và
 ![](img/torrent.jpg)
 
 Kết hợp giữa kiến trúc tâp trung và không tâp trung. Sử dụng hệ thống tập trung để tìm kiếm file torrent, lấy list các node tracker đang lưu giữ tập tin cần tải. Sử dụng hệ thống phi tập trung để tải và seed file.
+
+## Chuơng 3: Tiến trình và luồng
+
+### 1. Tiến trình và luồng
+
+#### 1.1. Giới thiệu
+
+* Tiến trình: Một chuơng trình đang chạy trên một bộ xử lý ảo. HDH làm cho hoạt động của các tiến trình là trong suốt vs nhau bằng cách tạo ra không gian địa chỉ độc lập, ...
+
+* Luồng: là một hay một phần chương trình đang thực hiện, các luồng không nhất thiết phải trong suốt với nhau, chia sẻ ngữ cảnh với nhau, nó coi hiệu năng là quan trọng.
+
+* Lời gọi hệ thống (System call): là tập lệnh mở rộng do hệ điều hành cung cấp xác định giao diện giữa hệ điều hành và các chương trình người sử dụng.
+
+* Blocking System call: là lời gọi hệ thống mà sau khi được gọi bởi tiến trình người sử dụng thì tiến trình này bị dừng lại cho đến khi thực hiện xong lời gọi hệ thống.
+
+#### 1.2. Luồng trong các hệ thống tập trung 
+
+Lợi ích của đa luồng:
+
+* Tránh dừng cả tiến trình với 1 lời gọi hệ thống dừng
+
+* Khai thác đa vi xử lý, tăng hiệu năng cho hệ thống 
+
+* Hữu dụng trong các chuơng trình lớn
+
+* module hóa các phần mềm
+
+Cách thức cài đặt luồng: **user-mode**(tạo bộ thư viện và xây dựng và quản lý luồng thực hiện bởi user) và **kernel-mode** (xây dựng và quản lý luồng ở tầng kernel). Đối với user-mode, lời gọi hệ thống sẽ làm dừng tòan bộ theard thuộc tiến trình đang chạy. Đối với kernel-mode, chi phí cho các thao tác rát lớn , mất hết lợi ích vể hiệu năng khi sử dụng đa luồng. Giải quyêt bằng cách sử dụng **tiến trình nhẹ**. 
+
+![](img/LWP.jpg)
+
+Với cơ chế này, mỗi tiến trình đơn có nhiều tiến trình nhẹ. Mỗi tiến trình nhẹ lại có thể tạo và quản lý luồng ở tầng user. Khi 1 tiến trỉnh nhẹ đuợc tạo ra nó đi tìm luồng thích hợp để chạy (mỗi tiến trình nhẹ có 1 bảng lùông). Nếu 1 luồng bị dừng, nó thực hiện lời gọi lập lịch. Khi có lời gọi hệ thống dừng, chỉ dừng môt tiến trình nhẹ, hệ điều hành sẽ chuyển ngữ cảnh sang tiến trình nhẹ khác.
+
+#### 1.3. Luồng trong các hệ thống phân tán.
+
+* Server đơn luồng: Chỉ có thể xử lý được một yêu cầu tại một thời điểm, các yêu cầu khác đuợc xếp vào hàng đợi và xử lý tuần tự. => trong suốt yếu.
+
+* Server đa luồng: Trao đồi thông tin có thể tiến hành song song với các xử lý khác. Các luồng chính: Nhận các yêu cầu, xử lý yêu cầu, trả về cho client.
+
+	* Server có điều phối: 1 luồng chuyên biệt dùng để nhận yêu cầu và chỉ ra luồng nào sử lý công việc nào.
+	
+	* Các kiến trúc khác: TheardPerRequest (ko cần hàng đợi, max băng thông nhưng giảm hiệu năng), TheardPerConnection, TheardPerObject;
+
+* Máy trạng thái: 1 luồng lưu trạng thái ra ổ đĩa.
+
+* Client đa luồng: 2 loại luống : hiển thị và xử lý.
+
+### 2. Ảo hóa
+
+#### 2.1. giới thiệu:
+
+Đầu tiên dùng để mô tả phần cứng, s auđó chuyển sang mô tả phần mềm.
+
+Ý tuởng: Giả lập môi truờng làm việc của hệ thống này trên môi truờng làm việc của hệ thống khác 
+
+4 Mức khác nhau của giao diện:
+
+* Phần cứng và phần mềm đuợc gọi bởi bất kì phần mềm nào
+
+* Phần cứng và phần mềm chỉ đuợc gọi bởi OS
+
+* Các lời gọi hệ thống 
+
+* Các thư viện
+
+#### 2.2. Các kiến trúc ảo hóa 
+
+* Máy ảo tiến trình: Run time System: Cung cấp các tập lệnh trìu tuợng để có thể chạy chuơng trình. Các tập lệnh có thẻ6 chạy bằng thông dịch hoặc giả lập như đã chạy. VD: java 
+
+* Kiến trúc kiển sóat: 1 tầng hòan tòan che phủ phần cứng, cung ứng 1 tập lệnh đầy đủ như 1 giao diện, cho phép chạy nhiều hệ điều hành khác nhau trên 1 hệ thống. VD: các ứng dụng máy ảo
+
+### 3. Di trú mã 
+
+#### 3.1. Lý do:
+
+* Hiệu năng: cân bằng tải 
+
+* Mềm dẻo
+
+#### 3.2. Di trú mã
+1 tiến trình: Mã, tài nguyên , trạng thái 
+
+* Week Mobility: Mã và giá trị khởi tạo 
+
+* Strong Mobility: gửi thêm trạng thái hiện tại 
+
+#### 3.3. Liên kết tài nguyên
+
+* Bằng định danh
+
+* Bằng giá trị
+
+* Bằng kiểu dữ liệu 
+
+Đối với các hệ thống không đồng nhất, việc thực hiện mã rất khó khăn phải dịch lại mã 
+
 
 
  
