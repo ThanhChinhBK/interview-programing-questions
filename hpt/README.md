@@ -242,25 +242,31 @@ Với cơ chế này, mỗi tiến trình đơn có nhiều tiến trình nhẹ.
 
 #### 2.1. giới thiệu:
 
-Đầu tiên dùng để mô tả phần cứng, s auđó chuyển sang mô tả phần mềm.
+Đầu tiên dùng để mô tả phần cứng, sau đó chuyển sang mô tả phần mềm.
 
 Ý tuởng: Giả lập môi truờng làm việc của hệ thống này trên môi truờng làm việc của hệ thống khác 
 
 4 Mức khác nhau của giao diện:
 
-* Phần cứng và phần mềm đuợc gọi bởi bất kì phần mềm nào
+* Nằm Phần cứng và phần mềm,  đuợc gọi bởi bất kì phần mềm nào
 
-* Phần cứng và phần mềm chỉ đuợc gọi bởi OS
+* Nằm Phần cứng và phần mềm chỉ đuợc gọi bởi OS
 
-* Các lời gọi hệ thống 
+* Các lời gọi hệ thống (thư viện và OS) 
 
-* Các thư viện
+* Các thư viện (application và thư viên)
+
+![](img/interface.jpg)
 
 #### 2.2. Các kiến trúc ảo hóa 
 
 * Máy ảo tiến trình: Run time System: Cung cấp các tập lệnh trìu tuợng để có thể chạy chuơng trình. Các tập lệnh có thẻ6 chạy bằng thông dịch hoặc giả lập như đã chạy. VD: java 
 
+![](img/runtime_sys.jpg)
+
 * Kiến trúc kiển sóat: 1 tầng hòan tòan che phủ phần cứng, cung ứng 1 tập lệnh đầy đủ như 1 giao diện, cho phép chạy nhiều hệ điều hành khác nhau trên 1 hệ thống. VD: các ứng dụng máy ảo
+
+![](img/virtual_machine.jpg)
 
 ### 3. Di trú mã 
 
@@ -287,6 +293,246 @@ Với cơ chế này, mỗi tiến trình đơn có nhiều tiến trình nhẹ.
 
 Đối với các hệ thống không đồng nhất, việc thực hiện mã rất khó khăn phải dịch lại mã 
 
+## Chương 4: Trao đổi thông tin
+
+### 1. Cơ Bản 
+
+#### 1.1. Các giao thức phân tầng
+
+Phải thống nhất về các mặt: cấu trúc thông điệp, cơ chế phát hiện lỗi, kích cỡ dữ liệu và sự thống nhất của thông điệp gọi chung là giao thức
+
+Mô hình OSI (Open System Interconection): 
+
+Trao đổi thông tin chủ yếu dựa vào 2 thao tác: gửi và nhận. Có thể đồng bộ hoặc bất đồng bộ
+
+* đồng bộ: Gửi và nhận đều là thao tác dừng, tiến trình sẽ dừng cho đến khi thông điệp nhận
+* Không đồng bộ: Tiến trình ko bị dừng, dùng bộ đệm cho phép chạy nền để nhận vả gửi thông điệp
+
+Đích đến của thông điệp : Cặp IP và port, 
+
+#### 1.2. UDP
+
+Không hướng kết nối, không tin tưởng và không đồng bộ
+
+* Server: Nhận yêu cầu, lấy IP va Port của Client, gửi trả lời
+* Client: Gửi và nhận
+
+Vấn đề: sent() ko phải phương thức dừng, recieve() bị dừng, kích cỡ thông điệp, timeout.
+
+#### 1.3. TCP
+
+Hướng kết nối, đáng tin cậy.
+
+Bắt tay 3 bước: A gửi SYN, B nhận SYN gửi ACKSYN, A nhận ACKSYN gửi ACK
+
+Kết thúc: A gửi FIN, B nhận FIN gửi ACK, B ngắt kết nối, gửi FIN, A nhận FIN, gửi ACK, B nhận ACK và đóng kết nối.
+
+### 2. Lời gọi thủ tục từ xa
+Một cải tiến trong hệ phân tán là gộp tầng trình diễn và tầng phiên thành một tầng mới là tầng middle ware. Do đó ta cũng phải xây dựng các giao thức tương ứng cho tầng middleware này.
+
+Có 4 mô hình dịch vụ middleware :
+
+- Gọi thủ tục từ xa RPC (Remote Procedure Call).
+- Triệu gọi đối tượng từ xa (Remote Object Invocation)
+- Middleware hướng thông điệp (Message – oriented Middleware)
+- Middleware hướng dòng (Stream – oriented Middleware)
 
 
+#### 2.1. Giao thức yêu cầu trả lời
+
+Sử dụng 2 loại thông điệp để giao tiếp là hỏi và trả lời. Ưu điểm là không cần báo nhận (ACK) vì đã có trả lời, Đồng bộ. Các thủ tục:
+
+* doOperation()
+* getRequest()
+* sentReply()
+
+VD: HTTP
+
+Các cách thức:
+
+* RR
+* RR(request-reply)
+* RRA(request-reply-ack)
+
+#### 2.2. Lời gọi thủ tục từ xa
+
+Che dấu những khía cạnh quan trọng để đạt được độ trong suốt cao nhất:
+
+* mã hoá và giải mã các tham số và kết quả
+* Truyền thông điệp
+* giữ lại các ngữ nghĩa cần thiết cho việc truyền thủ tục
+
+Về việc truyền tham số, tham trị ko gặp nhiều vấn đề, đối với tham trị, sử dụng cơ chế copy phục hồi.
+
+![](img/rpc.png)
+
+Thủ tục như 1 interface, quá trình thực hiện là trong suốt với lập trình viên, lập trình viên không hề biết thủ tục đang được thực hiện ở server.
+
+Trong mô hình client – server thì lời gọi thủ tục từ xa được thực hiện qua các bước sau:
+
+1. Tiến trình muốn thực hiện thủ tục ở máy client sẽ gọi client stub.
+1. Client stub sẽ tạo một bản tin và có lời gọi đến hệ điều hành của client đó.
+1. Hệ điều hành của máy client sẽ gửi bản tin đó tới hệ điều hành của máy server.
+1. Hệ điều hành của server sẽ gửi bản tin tới server stub.
+1. Server stub lấy các thông tin của gói tin và gọi chương trình con tương ứng.
+1. Server thực hiện công việc được yêu cầu và trả kết quả về cho server stub.
+1. Server stub đóng gói kết quả đó vào bản tin rồi gọi hệ điều hành của server đó.
+1. Hệ điều hành của máy server này sẽ gửi bản tin kết quả đó hệ điều hành của máy client.
+1. Hệ điều  hành của máy client sẽ gửi bản tin cho client stub.
+1. Client stub sẽ mở gói tin kết quả và trả về cho client. 
+
+![](img/rpc_step.jpg)
+
+Cơ chế truyền tham trị sẽ gặp các vấn đề: khác nhau kiểu dữ liệu hay khác kiểu dữ liệu. VD: biễu diễn số theo kiểu little radian và big radian.Cơ chế truyền tham số bằng tham chiếu, con trỏ không có giá trị, giải quyết = sao chép và phục hồi. Tuy nhiên lại Khó áp dụng cho dữ liệu có cấu trúc. 2 bên gửi và nhận cùng phải thống nhất về các đặc tả tham số (tuân thủ 1 kiểu giao thức): Định dạng thông điệp, Các biễu diễn các cấu trúc dữ liệu đơn giản, kiểu trao đổi thông điệp, triển khai server và client stub, các stub khác nhau gửi interface giao tiếp vs ứng dụng, 1 interface bao gồm các thủ tục có thể gọi ở client và thực hiện trên server thường được mô tả bằng IDL (viết = cùng ngôn ngữ vs client hoặc server) , và biên dịch thành server stub hoặc client stub. Đối với các kiểu dữ liệu struct, dùng các đặc tà như CORBA, XML,..
+
+**RPC Không đồng bộ**: Có những trường hơp RPC ko cần trả lại kết quả nên sau khi client gọi RPC sẽ tiếp tục thực hiện mà không quan tâm đến kết quả trả lại.
+
+![](img/asyn_rpc.png)
+![](img/one_way_rpc.png)
+
+**Xây dựng chương trình RPC**:
+
+![](img/rpc_programing.jpg)
+
+1. Định nghĩa giao diện 
+2. IDL comlier -> Client stub và server stub, header
+3. đưa về server và client, viết code và biên dịch = Linker
+
+#### 2.3. Lời gọi phương thức từ xa
+
+Có thể khai thác các điểm mạnh của lập trình OOP và có thể truyền các đối tượng thay vì các biến. Môt đối tượn từ xa phải có interface đặc tả các thủ tục của mình để các đối tượng khác có thể gọi.
+
+### 3. Trao đổi thông tin hướng thông điệp
+
+Bản chất của RPC, đó là client và server phải cùng đang hoạt đông và client bị khoá cho đến khi yêu cầu của nó được xử lý, cần phải thay thế bằng thứ khác. 
+
+
+
+#### 3.1. Tạm thời
+
+
+Bản tin gửi đi chỉ được lưu lại trong phiên truyền thông đó. Khi phiên truyền thông đã hoàn thành hoặc khi kết nối bị hủy bỏ thì các bản tin đó cũng bị hủy bỏ trên các server. Do đó, vì một lý do nào đó mà một server trung gian không thể chuyển tiếp bản tin đi được thì bản tin này sẽ bị hủy bỏ.
+
+**Socket**: Điểm cuối truyển thông cho phép ừng dụng có thể ghi dữ liệu và đọc dữ liệu qua mạng. Các hàm socket nguyên thuỷ: Đối vs Server: Socket() khởi tạo, bind() gán đia chỉ, listsen() hàm nghe ko dừng, accept() hàm nghe dừng; Đối vs client 
+Socket(), connect() hàm dừng, sau đó 2 bên sẽ trao đổi: send() và receive(). Kết thúc là close().
+
+Socket không đủ mức trìu tượng và ko thích hợp với mạng tốc đô cao (do dùng TCP/IP).
+
+**MPI**:Chuẩn về truyền thông điêp MPI (Message-Passing Interface) . MPI được thiết kế cho các ứng dụng song song và truyền thông điêp tạm thời. MPI coi việc truyền thông diển ra trong tiến trình, nhóm tiến trình, và gán mỗi nhóm tiến trình môt định danh thay vì sử dụng đia chỉ tầng giao vận như socket.
+
+#### 3.2. Bền vững
+
+![](img/mom.png)
+
+**MOM**: Hệ thống hàng đợi thông điêp hỗ trợ trao đổi thông tin không đồng bộ bển vững , hỗ trợ lưu trữ thông tin cho bên gửi và bên nhận. 2 bên không cần cùng hoạt đông lúc truyền thông điêp. Bên gừi chi được đảm bảo lả thông tin đã lưu vào hàng đơi mà không được đảm bảo là bên nhận có nhận được thông tin hay không.
+
+Cần lưu lại vị trí các hàng đợi, tương tự như DNS. Các đơn vị quản lý hàng đợi, có 1 số đơn vị hoạt đông như 1 route vì nhiều khi hệ thống hàng đơi khá lớn, không thể lưu trữ trong 1 bảng. 
+
+![](img/mon_route.jpg)
+
+Không thể sử dụng định dang chung thông điêp -> sử dụng 1 node có tên là message broker để chuyển đổi thông điêp để bên nhận có thể đọc được. Message Broker hoạt đông nhứ ứng dụng và cũng có hảng đợi riêng.
+
+
+![](img/broker.jpg)
+
+### 4. Trao đổi hướng dòng
+
+Trao đổi các thông tin theo thời gian liên tiếp, vd: audio, video, ...
+
+#### 4.1. Dòng dữ liệu liên tục
  
+Để chạy 1 file audio phải thiết lập 1 dòng dữ liệu liên tục đồng bộ về thời gian, có giới hạn độ trễ thời gian.  Thời gian chuyển qua mạng < khoảng cách lấy mẫu. Dòng dữ liệu đơn chỉ gồm 1 chuỗi dữ liệu, dòng phức thì gồm nhiều dòng đơn. Chuyển tin đẳng thời: tất cả dòng phải truyền trên 1 ngưỡng thời gian cho trước.
+
+![](img/stream_oriented.jpg)
+
+ **Qos**: Module kiểm tra đảm bảo chất lượng dịch vụ
+
+#### 4.2. QoS
+
+Mô tả cơ chế cần thiết để mối quan hệ rằng buộc về thời gian được đảm bảo. Đàm bảo các yêu cầu: bitrate, delay, e2e delay, jilter, round trip dela
+
+Cơ chế phân lớp gói tin theo mức độ ưu tiên, các router lấy đó làm cơ sở truyền gói tin đi. Cơ chế sử dụng bộ đệm để giảm jilter, bộ sử dụng bên nhận, nhận 1 số gói tin trước rồi mới truyền cho ứng dụng. Cơ chế truyền xen kẽ: Đảo các thứ tự đễ phân tán thiệt hại, làm giảm độ gián đoạn của dữ liệu.
+
+![](img/qos.jpg)
+
+#### 4.4 Đồng bộ hoá dòng
+
+Duy trì mối liên hệ thời gian giữa các dòng dữ liệu đơn. Đồng bộ hoá dựa trên đơn vị dữ liệu. Cần xem xét cơ chế cơ bản để đồng bộ 2 dòng và sự phân bố cơ chê đó trong một môi trường mạng.
+
+Ở mức đơn vị dữ liệu. có 1 tiến trình chuyên đọc ghi đơn vị dữ liệu để đảm bảo các rằng buộc về thời gian. Tuy nhiên ứng dụng hoàn toạn chịu trách nhiệm đồng bộ hoá trong khi nó chỉ có các công cụ cáp thấp. 
+
+![](img/simple_sync.png)
+
+Để giải quyết vần đề này, người ta cung cấp 1 middleware chứa các công cụ để đồng bộ dòng dễ dàng hơn. Ứng dụng chỉ cần gọi các method đã được cung cấp sẵn để đồng bộ hoá.
+
+## Chương 5: Định Danh
+
+### 1. Tên, định danh và thực thể.
+
+**Tên**: là các xâu bit hoặc kí tự dùng để tham chiếu đến 1 thực thể trong hệ phân tán. Cơ chế truy cập từ tên đến thực thể gọi là **hệ thống định danh**. Môt thực thể có thể có nhiểu tên. Để sử dụng 1 thực thể, cần access nó thông qua **access point**. Access point là 1 thực thể đặc biệt, tên chính lả địa chỉ của nó. Địa chỉ của 1 access point chính là địa chỉ của thực thể của access point đó. 1 thực thể có thể có nhiều access point và có thể thay đổi access point. Có nhiều tên -> ko biết dùng tên nào -> Sử dụng **định danh**.
+
+Định danh:
+
+* chỉ đến nhiều nhất 1 thực thể
+* 1 thực thể chỉ có 1 định danh
+* ko đổi
+
+địa chỉ ko phải định danh. Các vấn đế: Định danh cảu các thực thể ko còn tồn tại, tái sử dụng định danh và cạn kiệt định danh. 
+
+1 số vd của định danh: URI, URL (URI cho phép mô tả phương thức truy cập) , URN, ...
+
+**Dịch vụ tên**: lưu trữ thông tin về các thực thể, phân giải tên. Yêu cầu: Quy ô vô hạn, chịu được các sự thay đổi, sẵn có và chịu được các rủi ro về bảo mât. vD: Hệ thống tệp linux, DNS, ...
+
+### 2. Kiểu đặt tên phẳng
+
+Là chuỗi bit không có cấu trúc, không có access point để tìm địa chỉ -> cơ chế phân giải tên sang địa chỉ.
+
+#### 2.1. Các giải pháp thông thường
+
+##### 2.1.1. Quảng bá
+
+Điều kiện thục hiện: Hệ phân tán hỗ trợ trao đổi thông tin thông qua quảng bá. Đưa ra 1 thông báo hỏi tới tất cả thực thể, thực thẻ nào đúng sẽ quãng bá 1 thông báo chừa đinh danh và đia chỉ của mình.vs ARP. -> tốn tài nguyên -> sử dụng thông báo nhóm. Vấn đề: ko có cơ chế xác thực.
+
+#### 2.1.2. Chuyển tiếp con trỏ
+
+Xuât phát điểm tất cả các thực thể đều có thông tin ánh xạ giữa tên và đia chỉ của các thực thề ánh cạ khác. Khi các thực thể thay đổi địa chỉ, sẽ để lại tham chiếu mới tại đoạ chỉ cũ cho các thực thể khác có thể truy cập. Sau quá trình vận hành, các thực thể sẽ tham chiếu đến nhau thông qua môt chuỗi các con trỏ. 
+
+![](img/point_forward.jpg)
+
+Nhược diểm: Chuỗi tham chiếu dài, mất dấu khi con trỏ hỏng. Giải quyết bằng cách tạo shortcut và loại bỏ con trỏ
+
+![](img/point_shortcut.jpg)
+
+#### 2.2. Home-Based
+
+Lưu trữ vị trí hiện tại của thực thể (thường là tại nơi tạo ra thực thể). Nhược điểm: phải liên lạc với home base trước, rất mệt mỏi. Vị trí của Home based là tĩnh. 
+
+#### 2.3. Bảng băm phân tán:
+
+Hệ thống Chorch. succ(k): id nhỏ nhất lớn hơn k. Thực thể k sẽ được quản lý tại node succ(k).
+
+![](img/Chord_naming.jpg)
+
+Giả sử định danh = m bit, tạo một node p lưu 1 finger table với m phần tử FT(p,i) = succ(p + 2^(i-1)). Khi tìm cần tìm thực thể x qua mạng, nó sẽ so sánh trong bảng finger table và nhảy tới node gần x nhất.
+
+#### 2.4. Giải pháp phân cấp
+
+Mạng chia ra làm tập hợp các domain, domain đỉnh đơn là domain lớn nhất kết nối với toàn bộ mạng mỗi domain có thể chia ra làm các subdomain. Mỗi domain sẽ kiểm soát tất cả các thành viên trong domain đó -> Dạng cây thư mục. Nút root có thông tin về mọi thành viên trong thực thể của mình.
+
+![](img/hierachical.jpg)
+
+Đối với trường hợp có 2 địa chỉ, node nhỏ nhất bao gồm 2 địa chỉ chứa bảng ghi thông tin vị trí cho node đó và chứa 2 con trỏ đến 2 vị trì.
+
+![](img/2_address.jpg)
+
+Quá trình tìm kiếm: ngược từ nút lá đến nút cha đến khi tìm thấy node có thông tin thực thề. -> Tìm kiếm cục bộ, mở rộng dần bán kính tìm kiếm.
+
+Cập nhập: chuyển dần ngược lên cho đến khi tìm được node chứa thông tin thực thể gốc rồi cập nhập tạo đó sau đó truyền ngược trở lại.
+
+Lưu trữ thông tin trong bộ đệm là hiệu quả đối vs các thực thể ít dịch chuyển hoặc chỉ dịch chuyển trong domain.
+
+* Loại bỏ bớt tên không dùng:
+
+	* Danh sách tham chiếu: Trước khi hoạt động phải đăng kí thời hạn sử dụng, khi hết thời hạn, có thể gán cho thực thể khác.
+	* Phát hiện các thực thể ko kết nối: Theo dõi tham chiếu, nếu ko có tham chiếu thì loại bỏ, tìm các node không thể tham chiếu được từ root.
+	* Con đếm tham chiếu: Mỗi khi có tham chiếu đến +1, nếu bỏ thì -1 -> hệ phân tán bị đếm 2 lần và đếm chậm.
