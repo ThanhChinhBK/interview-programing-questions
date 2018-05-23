@@ -293,6 +293,19 @@ Với cơ chế này, mỗi tiến trình đơn có nhiều tiến trình nhẹ.
 
 Đối với các hệ thống không đồng nhất, việc thực hiện mã rất khó khăn phải dịch lại mã 
 
+### 3. Client
+
+#### 3.1. Networked User Interfaces
+
+Cung cấp phương tiện để người dùng tương tác với máy chủ từ xa.
+
+**X Window System**:
+
+![](img/x_window.jpg)
+
+Dùng để điều khiển các thiệt bị đầu cuối ánh xạ theo bit, bao gồm màn hình, bàn phím và chuột. X có thể xem như là 1 phần của hệ điều hành để diều khiển phần cứng. Trái tim của X là X-kernel, nó cung cấp 1 interface level thấp X-lib dùng để điều khiển màn hình và capture thông tin từ chuột cũng như bàn phím. Điều tuyệt vời của X-system là X-kernel và X application không nhất thiết phải cài trên 1 máy. X-lib sẽ bắt các sự kiện (kích chuôt, gõ chữ) gửi về cho X-kernel, X-kernel sẽ xử lý và phản hồi về cho X-lib rồi truyền lên tầng ứng dụng. Giao thức này goi là 1 X-protocol vá là 1 giao thức ở tầng ứng dụng.
+
+
 ## Chương 4: Trao đổi thông tin
 
 ### 1. Cơ Bản 
@@ -536,3 +549,48 @@ Lưu trữ thông tin trong bộ đệm là hiệu quả đối vs các thực t
 	* Danh sách tham chiếu: Trước khi hoạt động phải đăng kí thời hạn sử dụng, khi hết thời hạn, có thể gán cho thực thể khác.
 	* Phát hiện các thực thể ko kết nối: Theo dõi tham chiếu, nếu ko có tham chiếu thì loại bỏ, tìm các node không thể tham chiếu được từ root.
 	* Con đếm tham chiếu: Mỗi khi có tham chiếu đến +1, nếu bỏ thì -1 -> hệ phân tán bị đếm 2 lần và đếm chậm.
+
+### 3. Không gian tên có cấu trúc
+
+#### 3.1. Không gian tên
+
+![](img/name_graph.jpg)
+
+Các tên được tổ chức vào các đồ thị có hướng, gồm 2 loại node: node lá và node thư mục. Mỗi node được xem như 1 thực thể, Node thư mục lưu trữ 1 bảng, mỗi nhánh đi ra lưu trữ 1 cặp thông tin nhãn vả định danh của node đó. Đường dẫn là 1 chuỗi các node nằm trên đường đi. 1 node có thể có nhiều đường dẫn đến nó.
+
+#### 3.2. Phân giải tên
+
+Đi từ từ lần lượt để tìm các node cha.
+
+vd: Hệ thống thư mục unix: Liên kết vật lý, liên kết biểu tượng, ...
+
+**Mounting**: Môt Dir node sẽ lưu trữ một dir node ở không gian tên khác.
+
+**Merging**: tạo node root mới để ghép 2 không gian tên thành 1 không gian tên mới.
+
+#### 3.3. Cài đặt không gian tên
+
+##### 3.3.1. Dịch vụ tên:
+
+Chức năng: Đăng kí, tìm kiếm va phân giải. Được lưu trên nhiều máy khác nhau. Việc phân tán không gian tên được tổ chức theo mô hình phân cấp: Mức toàn thể(rất ít thay đổi), mức quản trị, mức quản lý.
+
+![](img/hireachical_dns.jpg)
+
+##### 3.3.2. Phân giải tên
+
+* Không đệ quy: Từng Server gửi server mức dưới cho bộ phân giải tên đặt tại client. 
+* Đệ quy: Chỉ gửi yêu cầu 1 lần, các server tự tìm nhau đến node cuối cùng rồi mới gửi lại cho bộ phân giải tên ở client. Sử dụng bộ đệm hiệu quả cà giảm chi phí trao đổi thông tin (chí lấn) nhưng lại yêu cầu hiệu năng server cao.
+
+### 4. Dựa trên thuộc tính
+
+#### 4.1. Dịch vụ thư mục
+
+Việc chọn lựa các tạp thuộc tính chung phù hợp lá rất khó -> RDF cho phép định nghĩa thuộc tính tự động.
+
+#### 4.2. LDAP
+
+Giao thức truy cấp cấu trúc thư mục (tập hợp các đối tượng có đặc điểm tương tự). Là 1 giao thức hướng thông điệp.
+
+ 
+
+
