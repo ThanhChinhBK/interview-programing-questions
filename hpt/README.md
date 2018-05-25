@@ -512,7 +512,7 @@ Xuât phát điểm tất cả các thực thể đều có thông tin ánh xạ
 
 ![](img/point_forward.jpg)
 
-Nhược diểm: Chuỗi tham chiếu dài, mất dấu khi con trỏ hỏng. Giải quyết bằng cách tạo shortcut và loại bỏ con trỏ
+Nhược diểm: Chuỗi tham chiếu dài, mất dấu khi con trỏ hỏng. Giải quyết bằng cách tạo shortcut và loại bỏ con trỏ.
 
 ![](img/point_shortcut.jpg)
 
@@ -591,6 +591,134 @@ Việc chọn lựa các tạp thuộc tính chung phù hợp lá rất khó -> 
 
 Giao thức truy cấp cấu trúc thư mục (tập hợp các đối tượng có đặc điểm tương tự). Là 1 giao thức hướng thông điệp.
 
+## Chương 6: Đồng bộ
+
+Mục đích:
+
+* Phục vụ truy cập tài nguyên chung, tránh tương tranh
+* Thứ tự các sự kiện, đảm bảo các tiến trình thực hiện đúng thứ tự 
+
+### 1. Đồng bộ hoá thời gian
+
+#### 1.1. Khái niệm
+
+![](img/sync_notion.png)
+
+Trong hệ tập trung, dùng đồng is very easy, trong hệ phân tán không có đồng hố vật lý đặc trưng. VD: khi make file, chỉ dịch những file .c chỉ dịch những file có thời gian ghi tài liệu > file .o .
+
+#### 1.2. Thời gian vật lý
+
+Chúng ta có nhiều cách để xác định thời gian.Phổ biến nhất là các hệ đếm thời gian theo thiên văn và ở đây là mặt trời.Có 23h một ngày và 3600 giây.Một giây mặt trời được tính là 1/3600 của một ngày mặt trời.Một trong những mô hình để tính thời gian áp dụng phương pháp trên là Internatinal Atomic Time viết tắt là TAI. Tuy nhiên, TAI lại có một vấn đề là cứ 86400TAIs sẽ có 3ms chậm hơn so với đồng hồ mặt trời.
+
+Để thống nhất thời gian vật l‎ người ta đã đưa ra khái niệm thời gian phối hợp toàn cầu UCT (Universal Coordinate Time). Viện chuẩn quốc gia Mỹ đã lập ra trạm phát radio sóng ngắn W W V để gửi UTC khi cần hoặc định kì.
  
 
+#### 1.3. Thuật toán đồng bộ thời gian
 
+Nếu tất cả các máy tính đếu có thể sử dụng WWV thì mọi thứ đếu dễ dàng vì tất cả đều chuẩn. Nhưng trong trường hợp không thể thì có thể sử dụng các giải thuật sau:
+
+##### 1.3.1. Giao thức thời gian mạng
+
+Chỉnh đồng hồ của client về theo đồng hồ của server.
+
+![](img/net_time.jpg)
+
+Độ chênh lệch = (( T2 - T1 ) + ( T3 - T4)) / 2
+
+##### 1.3.2. Giải thuật Berkeley
+
+![](img/berkeley.jpg)
+
+##### 1.3.4. Giải thuật đồng bộ trong mạng định tuyến
+
+2 giải thuật trên không thể áp dụng vì việc gửi gói tin trong mạng không dây là rất tốn năng lượng.
+
+![](img/wsn.jpg)
+![](img/wsn1.jpg)
+
+**RBS**: Đồng bộ quảng bá tham chiếu: đồng bộ hoá thời gian cục bộ, sender không tham gia hiệu chỉnh thời gian mà chỉ có nhiệm vụ gửi các gói tin cục bộ đến tiến trình khác. Dựa vào thời điểm nhận gói tin cục bộ, retriever tính được độ lệch thời gian của mình so với các máy cục bộ khác.
+
+### 2. Đồng hồ logic
+
+Chỉ quan tâm đến quan hệ trước sau chứ không quan tâm đến giá trị thời gian đúng
+
+#### 2.1. Đồng hồ Lamppost
+
+**quan hệ xảy ra trước**: A và B là những sự kiện của cùng 1 tiến trình (vd gửi và nhận thông điệp) thì kí hiệu : **A->B**, A-> B , B -> C thì A -> C
+
+![](img/lamppost1.jpg)
+![](img/lamppost2.jpg)
+
+m1 và m2 đã thoả mãn, m3 và m4 thì không -> hiệu chỉnh thời gian t3=t3'+1. Việc thực hiện đều chỉnh này thực hiện ở middleware. Đồng hồ logic Lamppost chưa giải quyết được mối quan hệ nhân quả của các tiến trình -> sử dụng đồng hồ vector.
+
+#### 2.2. Đồng hồ vector
+
+Tiến trình Pi quản lý một vector VCi thoả mãn:
+
+* VCi[i] : đồng hồ logic cục bộ của tiến trình Pi
+* Vci[j] : chi thức của Pi vế thời gian cục bộ của Pj
+
+Thuật toán:
+	
+1. Trước khi thực hiện 1 sự kiện Pi tiến hành: VCi[i] = VCi[i] + 1
+2. Khi Pi gửi thông điệp m cho Pj, đặt ts(m) = VCi
+3. sau khi nhận, Pj sẽ hiệu chình VCj[k] = max(VCj[k], ts(m)[k]) với mỗi k
+
+Để đảm bảo quan hệ nhân quã3, Pi muốn nhận tin từ Pj thì phải thoả mãn 2 điều kiện:
+
+* ts(m)[i] = VCj[i] + 1
+* ts(m)[k] <= VCj[k] với mọi k != i
+
+![](img/clock_vector.jpg)
+
+### 3. Các giải thuật loại trừ
+
+#### 3.1. Thuật toán tập trung
+
+1 tiến trình sẽ được coi là coordinator, khi các tiến trình muốn truy cập vào tài nguyên sẽ gửi thông điệp hỏi coordinator, nếu nhận dk OK thì sẽ truy cập vào. Khi tài nguyên chung đang có tiến trình truy cập, một tiến trình gửi yêu cầu truy cập, coordinator sẽ ko gửi câu trả lời mà xếp yêu cầu của tiền trình đó vào hàng đơi.
+
+**Đánh giá** : Nhược điểm duy nhất là nếu tiến trình điều phối bị hỏng thì hệ thống sẽ sụp đổ .Vì nếu một tiến trình đang trong trạng thái Block nó sẽ không thể biết được tiến trình điều phối có bị DEAD hay không .Trong một hệ thống lớn nếu chỉ có một tiến trình điều phối sẽ xuất hiện hiện tượng thắt cổ chai.
+
+#### 3.2. Thuật toán không tập trung
+
+Sử dụng bảng băm phân tán, hệ thống được xây dựng theo p2p, các tên đối tượng được băm ra để tìm node lưu trữ nó.1 tài nguyên sẽ được lưu dữ trên nhiều bản sao. Tài nguyên sẽ có tên duy nhất là **rname**, các bản sao **rname-i**, bản sao thứ i sẽ được lưu trữ ở succ(hash(rname-i)). Mỗi bản sao sẽ có 1 coordinator diều khiển bản sao đó. Nếu một tiến trình muồn truy cập vào tài nguyên, hơn 1 nửa số coordinator phải đồng ý. Nếu ít hơn thì chờ 1 khoảng thời gian ngẫu nhiên rồi yêu cầu truy cập lại.
+
+#### 3.3. Giải thuật phân tán
+
+Tất cả các tiến trình đếu ngang hàng. Khi một tiến trình muốn sử dụng dữ liệu, nó sẽ gửi thông điêp quảng bá tới tất cả tiến trình trong mạng. Các trường hợp có thể xảy ra:
+
+* Tiến trình đó ko truy cập và ko muốn truy cập -> OK
+* Đang truy cập, ko trả lời và lưu yêu cầu
+* Nếu đang muồn mà chưa được vào -> so sánh timestampe, ai thấp hơn thì thấng.
+
+Khi nhận dk đầy đủ thông điệp OK thì nó dk quyền truy cập vào tài nguyên.
+
+#### 3.4. Token Ring
+
+Mỗi node mạng sẽ biết dk node trước và sau của mình trong vòng logic đó. token chạy quanh vòng tròn, node nào nhận dk token thì có quyền truy cập tài nguyên. Cần thì giữ lại token. Vấn đề đặt ra là khi token bị mất  phải có cơ chế sinh lại token. Nhưng để xác đinh khi nào token bị mất là rất khó.
+
+**Tổng kết**
+
+![](img/summary.png) 
+
+### 4. Giải thuật bầu chọn
+
+#### 4.1. Giải thuật truyền thống
+
+** Giải thuật Bully ** Tiến trình p gửi thông điệp bầu chọn cho tất cả các ip lờn hơn nó, nếu ko ai trả lời thì nó thắng. Nếu có thì nó thua.
+
+![](img/bully.png)
+
+** Giải thuật bầu trọn vòng ** Gửi đi thông điệp Elec đến node tiếp theo kèm với id của mình, bỏ qua tiến trình bị hỏng, cho đến khi 1 tiến trình thấy id của mình. Nó biết rằng đã gửi đi 1 vòng và chọn ra tiến trình có số id cao nhất.
+
+![](img/ring_elec.jpg)
+
+#### 4.2. Giải thuật cho mạng ko dây
+
+Một node nhận election lần đầu, bên gửi là node cha, nó tiếp tục gửi election, từ lần thừ 2 chỉ gửi báo nhận mà ko forward nữa. 1 node nhận được tất cả báo nhận, nó là nút lá, nó gửi trạng thái của nó (capacity và buffer, ..) về dần cho nút root, root chôn ra nút xịn nhất làm lead.
+
+#### 4.3. Giải thuật cho hệ thống lớn
+
+dùng log2(n) bit để định danh super peer, lọc ra k bit đầu tiên để tìm node đó.
+
+Dựa vào vị trí, việc chuyển token dựa vào vector lực, token chuyển cho nhau dựa vào hợp lực từ các node trước đó. Node nào giữ token đủ lâu thì sẽ được làm super peer.
