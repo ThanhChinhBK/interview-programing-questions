@@ -705,11 +705,11 @@ Mỗi node mạng sẽ biết dk node trước và sau của mình trong vòng l
 
 #### 4.1. Giải thuật truyền thống
 
-** Giải thuật Bully ** Tiến trình p gửi thông điệp bầu chọn cho tất cả các ip lờn hơn nó, nếu ko ai trả lời thì nó thắng. Nếu có thì nó thua.
+**Giải thuật Bully** Tiến trình p gửi thông điệp bầu chọn cho tất cả các ip lờn hơn nó, nếu ko ai trả lời thì nó thắng. Nếu có thì nó thua.
 
 ![](img/bully.png)
 
-** Giải thuật bầu trọn vòng ** Gửi đi thông điệp Elec đến node tiếp theo kèm với id của mình, bỏ qua tiến trình bị hỏng, cho đến khi 1 tiến trình thấy id của mình. Nó biết rằng đã gửi đi 1 vòng và chọn ra tiến trình có số id cao nhất.
+**Giải thuật bầu trọn vòng** Gửi đi thông điệp Elec đến node tiếp theo kèm với id của mình, bỏ qua tiến trình bị hỏng, cho đến khi 1 tiến trình thấy id của mình. Nó biết rằng đã gửi đi 1 vòng và chọn ra tiến trình có số id cao nhất.
 
 ![](img/ring_elec.jpg)
 
@@ -722,3 +722,244 @@ Một node nhận election lần đầu, bên gửi là node cha, nó tiếp t�
 dùng log2(n) bit để định danh super peer, lọc ra k bit đầu tiên để tìm node đó.
 
 Dựa vào vị trí, việc chuyển token dựa vào vector lực, token chuyển cho nhau dựa vào hợp lực từ các node trước đó. Node nào giữ token đủ lâu thì sẽ được làm super peer.
+
+## Chương 7: Sao lưu và thống nhất dữ liệu
+
+### 1. Giới thiệu
+
+#### 1.1. Lí do sao lưu
+
+* Độ tin cậy: Tăng tính sẵn sàng của hệ thống
+* Hiệu năng: Giảm chi phí kết nối
+* Khả năng có giãn: Phân tải cho các bản sao để tăng khả năng phục vụ
+
+Vấn đề: Đồng bô như thế nào và khi nào ?
+
+* Thống nhất yếu: ko yêu cầu giồng nhau ngay lập tức
+* Thống nhất mạnh -> Hiệu năng thấp
+
+
+#### 1.2. Ưu nhược điểm:
+
+* Ưu: Tăng tốc độ truy cập, đảm bảo tính co dãn, giảm bãng thông sử dụng
+* Nhược: Để đàm bào thống nhất mạnh dẫn đến tốn băng thông và hiện tượng chờ đợi lẫn nhau
+
+### 2. Mô hình thống nhất hướng dữ liệu
+
+Đảm bảo đữ liệu trên tất cả các kho dữ liệu local là giồng nhau. Là mô hình thoả thuận mà kho dữ liệu cung cấp cho tiến trình, trong đó kho dữ liệu chỉ định chính xác kết quả của các thao tác đọc ghi khi các tiến trình hoạt động cùng lúc (có găng). Kết quả dữ liệu trả về với các thao tác đọc phải là kết quả của thao tác ghi cuối cùng trên kho dữ liêu.
+
+#### 2.1. Kho dữ liệu phân tán
+
+![](img/data_store.jpg)
+
+Là mô hình bộ nhớ chia sẻ dùng chung, bao gồm các thao tác đọc ghi vào các vùng bô nhớ. Bản chất lưu trữ phân tán vị trí , phân phối các kho dữ liệu logic có thể truy cập từ client. 1 kho dữ liệu logic được phân phối và sao lưu trên nhiều tiến trình.
+
+#### 2.2. Mô hình thống nhất liên tục
+
+Mức dộ thống nhất:
+
+* Giá trị dữ liệu: Độ lệch trung bình không vượt quá giá trị thoả thuận
+* Thời gian cập nhập cuối cùng: chênh lêch giữa các bản sao không quá giá trị thoả thuận
+* Thứ tự thực hiện các thao tác: Chênh kệch giữa các sai khác không vượt quá giá trị thoả thuận.
+
+**Conit** (conistency unit) : Định nghĩa độ không thống nhất. Là tập các đơn vị dữ liệu của kho dữ liệu phân tán để đo lường một độ không thống nhất nhất định:
+
+* Số lượng các thao tác đã được thực hiện nhưng chưa hoàn thành
+* SỐ lượng thao tác chưa được hoàn thành
+* Mức độ sai khác dữ liệu trước và sau khi hoàn thành
+
+vd: conit gồm 2 biến x và y:
+
+![](img/conit.jpg)
+
+* B chuyển cho A thao tác [**h**5,**B**i: x := x + 2];
+* A nghĩ thời gian của B đang lạ -> vector clock của A là (15, 5), của B là (0, 11).
+* A có 3 thao tác chờ, B có 2 thao tác chờ
+* A nghĩ tại B: x=2, y=0 => max diff = 5, B còn 1 thao tác chưa gửi cho A
+* B nghĩ tại A: x=2, y=0 => max diff = 6, A còn 3 thao tác chờ chưa gửi cho B
+
+Về kích thước của conit: Nếu conit ít, kích thước lớn thì khả năng xuất hiện sai lệch cao, cần cập nhập liên tục. Nếu số lượng nhiều, kích thước nhỏ thì sẽ giảm sai lệch, nhưng chi phí quản lý lại lớn.
+
+#### 2.3. Mô hình thống nhất theo thứ tự thao tác
+
+**Nhất quán chặt**: Đảm bảo thao tác đọc bất kỳ trên một dữ liệu x đều trả về một giá trị tương ứng với kết quả của thao tác ghi cuối cùng trên x đó.Sử dụng khái niệm thời gian tuyệt đối. Thời gian tuyệt đối này là tổng thể cho cả hệ thống để xác định đúng khái niệm “gần nhất”. Điều này là khó khả thi với hệ phân tán.
+
+![](img/strict.jpg)
+
+**Nhất quán tuấn tự**: Đảm bảo kết quả thao tác bất kỳ là như nhau nếu thao tác đọc và ghi do các tiến trình thực hiện trên mục dữ liệu một cách tuần tự và các thao tác của mỗi tiến trình xuất hiện trong chuỗi thao tác này chỉ ra bởi chương trình của  nó. Khi các tiến trình chạy đồng thời trên các máy khác nhau thì cho phép sự đan xen của các thao tác nhưng tất cả các tiến trình đều phải nhận biết được sự đan xen của các thao tác đó là như nhau.
+
+![](img/sequential.jpg)
+
+
+**Nhất quán nhân quả**:Đây là mô hình lỏng lẻo hơn mô hình nhất quán tuần tự. Mô hình này phân biệt các sự kiện có quan hệ nhân quả và các sự kiện không có quan hệ  nhân quả.Nếu sự kiện b được gây ra hoặc bị tác động bởi một sự kiện a xảy ra sớm hơn thì tính nhân quả đòi hỏi mọi thực thể khác phải “nhìn” thấy a trước rồi mới thấy b sau. để đạt được thống nhất nhân quả cần đàm bảo các nguyên tắc:
+
+* Các thao tác ghi có quan hệ nhân quả được nhận biết bởi các tiến trình khác theo cùng 1 thứ tự
+* Các thao tác ghi song song hoặc tương tranh thì không bắt buộc được nhận biết bởi các tiến trình khác theo cùng thứ tự.
+
+VD: 
+
+![](img/un_causal.jpg)
+
+Không thống nhất nhân quả vì W(x)a và W(x)b có mối quan hệ nhân quả nhưng P3 và P4 lại nhìn theo thứ tự khác nhau
+
+![](img/causal.jpg)
+
+Thống nhất nhân quả vì W(x)a và W(x)b là 2 thao tác ghi song song nên P3 và P4 nhìn theo thứ tự nào cũng được.
+
+**Thao tác nhóm**: Dữ liệu trong 1 chương trình có nhiều cao thao tác đọc ghi được bảo vệ chống lại các thao tác đọc ghi đồng thời từ đó tránh dẫn đến hiện tượng các kết quả trả về khác nhau từ các tiến trình bên ngoài. Cần đàm bảo 3 điều kiện:
+
+* Đoạn găng chỉ được truy cập khi tất cả các thao tác cập nhập hoàn thành
+* Chỉ được truy cập để ghi khi không có tiến trình nào giữ quyên truy cập
+* Trước khi truy cập để đọc cần kiểm tra tính cập nhập của đũ liệu 
+
+![](img/gang.png)
+
+**Tính phù hợp**: Đảm bảo một giá trị được viết bởi một tiến trình luôn được nhìn thấy bởi môt tiến trình khác nhưng không đảm bảo khi nào
+
+**Tính thống nhất** Đảm bảo thứ tự nhìn có ý nghĩa
+
+### 3. Mô hình thống nhất hường người dùng
+
+Là các mô hình đảm bảo cho một người đọc ở mọi nơi đều thu được kết quả như nhau.
+
+#### 3.1. Thống nhất cuối cùng
+
+Thực chất là đảm bảo kết quả của các thao tác cập nhập cuối cùng luôn truyền đến tất cả các bản sao kho dữ liệu logic. Kiểu thống nhất này dựa trên giả thuyết chỉ môt số ít các tiến trình có khả năng cập nhập dữ liệu còn phần lớn tiến trình chỉ có khả năng đọc vì vậy nên chi phí thường rẻ và đảm bảo thống nhất cao. VD: DNS, WWW.
+
+Vấn đề nảy sinh: xung đột đọc ghi khi 1 máy truy cập 2 kho dữ liêu logic:
+
+![](img/client_centric.jpg)
+
+#### 3.2. Thống nhất đơn điệu đọc
+
+Các kí hiệu:
+ 
+* **Kho dữ liệu phân tán**
+* **bản sao cục bộ**
+* **xi[t]**: Giá trị của x tại kho Li và thời điểm t
+* **WS(xi[t])**: các thao tác ghi phần tử x tại Li đã được thực hiện từ lúc khởi đầu 
+* **WS(xi[t1]; xj[t2])**: Tất cả các thao tác WS(xi[t1]) đã được phổ biến đến bản sao Lj, sau khoảng thời gian t2
+
+Một tiến trình đọc X, tất cả các thao tác tiếp theo đọc X hoặc các giá trị mới hơn X, không bao giờ đọc các giá trị cũ hơn X. Điều đó có nghĩa là khi một client thực hiện một thao tác đọc trên một bản sao rồi tiếp theo lại đọc trên một bản sao khác thì bản sao thứ hai kia ít nhất cũng phải được ghi giống với bản sao đầu tiên. 
+
+![](img/monotonic_read.png)
+
+hình a, W(x1, x2) đảm bảo ghi x1 rồi mới ghi x2 nên đảm bảo.
+
+#### 3.3. Thống nhất đơn điệu ghi
+
+Các thao tác ghi của môt dữ liệu trên dữ liệu là dời nhau. Thao tác ghi trên mục dữ liệu x của một tiến trình phải được hoàn thành trước bất kỳ một thao tác ghi nào khác trên x bởi cùng một tiến trình. Nói cách khác thì các thao tác ghi lên một mục dữ liệu sẽ được sắp xếp một cách có trật tự.
+
+![](img/monotonic_write.png)
+
+#### 3.4. Thống nhất đọc dữ liệu ghi
+
+Nếu 1 thao tác đọc diễn ra sau thao tác gho, các thao tác đọc sẽ chờ thao tác ghi hoàn thành rồi mới thực hiện. “Tác động của một thao tác ghi của một tiến trình lên mục dữ liệu x sẽ luôn được nhìn thấy bởi một thao tác đọc lần lượt trên x của cùng tiến trình đó”.
+
+![](img/read_write.png)
+
+#### 3.5. Thống nhất ghi sau khi đọc
+
+Thao tác ghi chỉ hoàn thành sau khi thao tác đọc hoàn thành. Mô hình nhất quán này ngược với nhất quán đọc kết quả ghi, nó đảm bảo rằng một người dùng sẽ luôn thực hiện thao tác ghi lên một phiên bản dữ liệu mà ít nhất cũng phải mới bằng phiên bản cuối cùng của nó. 
+
+![](img/write_read.png)
+
+### 4. Quản lý các bản sao
+
+#### 4.1. Xác định vị trí server
+
+**Bài toán**: Cho N vị trí đặt máy chủ, tìm K Vị trí tốt nhất để đặt các bản sao
+
+* Giải pháp 1: Dựa vào khoảng cách tới client, giảm khoảng cách trung bình từ bản sao tới các client là nhỏ nhất
+* Giải pháp 2: Hệ thống chia thành các (Cell) hệ tự trị, giải thuật chọn hệ tự trị lớn nhất và đặt server từ các hệ lờn nhất cho đến hết.
+
+#### 4.2. Nội dung sao lưu 
+
+Sau khi xác định ví trí của server, cần phải xác định nội dung được lưu trữ trên server nào. Có các kiển bản sao sau đây:
+
+![](img/replica_replace.png)
+
+* **Các bản sao bền vững, cố định**: tồn tại từ khi khởi tạo kho dữ liệu.  Số lượng các bản sao thường xuyên này rất ít. Có 2 cách tổ chức. Cách 1 là dữ liệu được sao l7u trên các bàn sao khác nhau, khi có yêu cầu sử dụng thì sẽ chuyển tới bản sao theo giải thuật routing. Cách còn lại là các hệ thống phản chiếu (mirrored), không chia sẻ tài nguyên giữa các bản sao, khi cần truy cập, client sẽ tự tìm bản sao, thường là các Web server hay là các server có chứa cơ sở dữ liệu dự phòng.
+* **Bản sao khởi tạo từ server**: Server sẽ kích hoạt bản sao tại các server khác để đảm bảo cân bằng tải. Một ví dụ điển hình là chúng được các công ty web hosting sử dụng để định vị vị trí địa lý của các bản sao gần nhất khi họ cần.
+* **Các bản sao khởi đầu từ client**: Các bản sao này được tạo ra từ yêu cầu của client, chẳng hạn như việc cache dữ liệu của một trình duyệt. Chúng được xếp đặt động dựa vào yêu cầu của client.Client quản lý cache, quyết định việc cập nhật
+cache (đọc, ghi). Ngoài ra có cơ chế chia sẻ cache giữa các client với nhau.
+
+Các cân bằng cần xem xét:
+
+* Trạng thái và thao tác: Có 3 giải pháp
+	* Chỉ thông báo khi có cập nhập: Sử dụng các thông báo vô hiệu hoá dữ liêu, client khi có nhu cầu sẽ tải dữ liệu về, thích hợp với ghi nhiều đọc ít, ưu điểm là tiết kiệm băng thông (chỉ phải gửi thông báo)
+	* Truyển dữ liêu cập nhập: có thể giảm thông tin cần truyển, thích hơp với đọc nhiều ghi ít
+	* Truyền thao tác cập nhập: Chỉ cần chuyển các tham số cho thao tác cập nhậ	
+* Pull và Push 
+	* Pull: Client ko biết khi nào server cập nhập để pull, thực hiện theo thời gian và địa điểm của hệ thống
+	* Push: Server đòi hỏi client gửi dữ liêu 
+	* Mixed: Kết hơp ưu điểm, mỗi thành phần có thời gian thông tin cần thiết phải cập nhập. Server có thê điểu chỉnh quãng thời gian này
+* Unicasting và Multicasting
+
+### 5. Các giao thức đảm bảo thống nhất
+
+#### 5.1. Thống nhất liên tục
+
+##### 5.1.1. Giới hạn sai lệch giá trị
+
+Thao tác ghi W(x) có trọng số là giá trị cập nhật của x, ký hiệu weight(W(x)), Tiến trình xuất phát của thao tác ghi được ký hiệu là origin(W(x)). Mỗi server lưu trữ một log Li về các thao tác ghi được tiến hành trên server, Gọi TW[i,j] là trọng số gộp của các thao t trên server j với bảo sao Li. Ta có: 
+
+![](img/tw_form.jpg)
+
+Giá trị thực của x tại t:
+
+![](img/value_form.jpg)
+
+Giá trị của x tại Li:
+
+![](img/vi_form.jpg)
+
+Nhiệm vụ là cần đảm bảo sao cho: v(t) - vi < di for every server Si.
+
+Phương pháp: Mỗi server Sk sẽ duy trì một TWk[i,j] là phiên bản TW[i,j] được sao lưu trên chính nó, thông tin này sẽ được trao đổi cho đến khi cập nhập lan truyền xong. Sk sẽ gửi cao thao tác trong log của nó đến Sj khi TWk[i,j] và TW[i,j] quá khác nhau. Thông thường đó là khi TW[k, k] - TWk[i, k] > d*I /(N -1). Cần lưu ý rằng 0 <= TWk[i, j] <= TW[i, j] <= TW[j, j].
+
+##### 5.1.2. Giới hạn về sai lệch thời gian
+
+Có thể sử dụng thời gian cục bộ của tiến trình để đánh giá
+
+* Server Sk có thông tin vector clock RVCk
+* Nếu th.i gian RVCk[i]=T(i) => Sk dã nhìn thấy tất cả các thao tác ghi được cập nhập trên Si dến thời diểm T(i)
+* T(i) chỉ thời gian cục bỗ của server i
+* Khi T(k)-RVCk[i]> delta => bỏ các thao tác có T>RVCk[i]
+
+##### 5.1.3. Giới hạn về sai lệch thứ tự thao tác
+
+Các thao tác được đưa vào hàng đợi ở mỗi bản sao, giới hạn sai lệch liên quan tới Thứ tự toàn cục và số lượng lớn nhất các thao tác ghi  nằm trong hàng đợi
+
+#### 5.2. Các giao thức dựa vào bản sao nguyên thuỷ
+
+##### 5.2.1. Ghi từ xa
+
+Tất cà các giao thức ghi chuyển đến server, đọc trên bản sao cục bộ.
+
+![](img/remote_write.jpg)
+
+##### 5.2.2. Ghi cục bộ
+
+Khi cần cập nhập, primary chuyển về cục bộ, cập nhập trên cục bộ, rồi thực hiện quảng bá cập nhập.
+
+![](img/local_write.jpg)
+
+##### 5.2.3. Ghi trên các bản sao
+
+###### a. Sao lưu tích cực
+
+Một tiến trình chịu trách nhiệm phổ biến thao tác cập nhật đến tất cả các bản sao. Cần có 1 trật tự toàn cục.
+
+###### b. Sao lưu dựa trên túc số
+
+* Sao lưu theo vote-Giải thuật quorum (túc số)
+	* Để có thống nhất mạnh=> cần cập nhật tất cả các bản sao
+	* Sau khi cập nhật với chi phí tốn kém=> không phải tất cả các bản sao đều được đọc=> chi phí vô ích
+	* Liệu có giảm được số lượng bản sao cần cập nhật (ngay)?
+* Khi đọc dữ liệu
+	* có khả năng đọc phải dữ liệu cũ
+	* Đọc thêm dữ liệu ở một số bản sao khác=> lựa chọn bản sao có dữ liệu mới nhất
+* Write Quorum; Read Quorum
+	1. NR + NW > N -> luôn đọc được các giá trị mới nhất, tránh read-write conflict
+	2. NW > N/2, khi 2 thao tác ghi xảy ra liên tiếp, luôn có ít nhất 1 bản sao đã cập nhập đầy đủ cả 2 thao tác, tránh write-write conflict
