@@ -10,10 +10,10 @@
 (menu-bar-mode -1)            ; Disable the menu bar
 
 
-;; change font, must do later
-; (set-face-attribute 'default nil :font "Fira Code Retina" :height 280)
+;; change font
+;(set-face-attribute 'default nil :font "Fira Code Retina" :height 280)
 
-(load-theme 'tango-dark)
+(load-theme 'wombat)
 
 
 ;; Make ESC quit prompts - not my favorite
@@ -60,9 +60,68 @@
   :config
   (ivy-mode 1))
 
+;; ivy rich mode
+(use-package counsel
+  :bind (("M-x" . counsel-M-x)
+         ("C-x b" . counsel-ibuffer)
+         ("C-x C-f" . counsel-find-file)
+         :map minibuffer-local-map
+         ("C-r" . 'counsel-minibuffer-history)))
+
+
+(use-package ivy-rich
+  :init
+  (ivy-rich-mode 1))
+
+
+;; icon and modeline
+(use-package all-the-icons)
+
+;; NOTE: The first time you load your configuration on a new machine, you'll
+;; need to run the following command interactively so that mode line icons
+;; display correctly:
+;;
+;; M-x all-the-icons-install-fonts
+
 
 (use-package doom-modeline
   :ensure t
-  :init (doom-modeline-mode 1)
-  :custom ((doom-modeline-height 15)))
+  :init (doom-modeline-mode 2)
+  :custom ((doom-Modeline-height 12)))
 
+(use-package doom-themes
+  :init (load-theme 'doom-gruvbox))
+
+;; column number
+(column-number-mode)
+(global-display-line-numbers-mode t)
+
+;; Disable line numbers for some modes
+(dolist (mode '(org-mode-hook
+                term-mode-hook
+		shell-mode-hook
+		eshell-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
+
+;; just for fun :)
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
+
+
+;; which key and helpfull, super helpful for lisp programing -> also not my favorite
+;; (use-package which-key
+;;   :init (which-key-mode)
+;;   :diminish which-key-mode
+;;   :config
+;;   (setq which-key-idle-delay 1))
+
+
+;; (use-package helpful
+;;   :custom
+;;   (counsel-describe-function-function #'helpful-callable)
+;;   (counsel-describe-variable-function #'helpful-variable)
+;;   :bind
+;;   ([remap describe-function] . counsel-describe-function)
+;;   ([remap describe-command] . helpful-command)
+;;   ([remap describe-variable] . counsel-describe-variable)
+;;   ([remap describe-key] . helpful-key))
