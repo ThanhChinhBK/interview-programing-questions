@@ -90,11 +90,17 @@
   :custom ((doom-Modeline-height 12)))
 
 (use-package doom-themes
-  :init (load-theme 'doom-gruvbox))
+  :init (load-theme 'doom-gruvbox t))
 
 ;; column number
 (column-number-mode)
 (global-display-line-numbers-mode t)
+
+;; use define-key to define key for each mode
+(define-key emacs-lisp-mode-map (kbd "C-x C-e") 'eval-buffer)
+
+;; use general to simple define key bindings
+;; (use-package general)
 
 ;; Disable line numbers for some modes
 (dolist (mode '(org-mode-hook
@@ -125,3 +131,6 @@
 ;;   ([remap describe-command] . helpful-command)
 ;;   ([remap describe-variable] . counsel-describe-variable)
 ;;   ([remap describe-key] . helpful-key))
+
+
+
