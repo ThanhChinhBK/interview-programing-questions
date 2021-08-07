@@ -115,11 +115,11 @@
 
 
 ;; which key and helpfull, super helpful for lisp programing -> also not my favorite
-;; (use-package which-key
-;;   :init (which-key-mode)
-;;   :diminish which-key-mode
-;;   :config
-;;   (setq which-key-idle-delay 1))
+(use-package which-key
+  :init (which-key-mode)
+  :diminish which-key-mode
+  :config
+  (setq which-key-idle-delay 0))
 
 
 ;; (use-package helpful
@@ -133,4 +133,24 @@
 ;;   ([remap describe-key] . helpful-key))
 
 
+;; project title
+(use-package projectile
+  :diminish projectile-mode
+  :config (projectile-mode)
+  :custom ((projectile-completion-system 'ivy))
+  :bind-keymap
+  ("C-c p" . projectile-command-map)
+  :init
+  ;; NOTE: Set this to the folder where I keep my Git repos
+  (when (file-directory-p "~/workspace")
+    (setq projectile-project-search-path '("~/workspace")))
+  (setq projectile-switch-project-action #'projectile-dired))
 
+(use-package counsel-projectile
+  :config (counsel-projectile-mode))
+
+
+;; magit
+(use-package magit
+  :custom
+  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
