@@ -209,3 +209,6 @@
   (dap-python-debugger 'debugpy)
   :config
   (require 'dap-python))
+
+(custom-set-variables
+ '(tab-always-indent nil))
