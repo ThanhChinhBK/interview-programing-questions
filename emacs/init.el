@@ -161,6 +161,17 @@
 
 
 ;; make emacs to be an IDE
+(electric-pair-mode 1)
+
+(use-package company
+  :init
+  (add-hook 'after-init-hook 'global-company-mode)
+  :config
+  ( setq company-minimum-prefix-length 2)
+  )
+
+
+
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :hook (lsp-mode . efs/lsp-mode-setup)
