@@ -161,7 +161,7 @@
 
 
 ;; make emacs to be an IDE
-(electric-pair-mode 1)
+
 
 (use-package company
   :init
@@ -221,5 +221,31 @@
   :config
   (require 'dap-python))
 
-(custom-set-variables
- '(tab-always-indent nil))
+(setq tab-always-indent nil)
+
+;; auto close brace
+(electric-pair-mode 1)
+(setq electric-pair-preserve-balance nil)
+(defun python-electric-pair-string-delimiter ()
+  (when (and electric-pair-mode
+             (memq last-command-event '(?\" ?\'))
+             (let ((count 0))
+               (while (eq (char-before (- (point) count)) last-command-event)
+                 (setq count (1+ count)))
+               (= count 3)))
+    (save-excursion (insert (make-string 3 last-command-event)))))
+
+(add-hook 'python-mode-hook
+          (lambda ()
+            (add-hook 'post-self-insert-hook
+                      #'python-electric-pair-string-delimiter 'append t)))
+
+
+
+;; C-c C-e to show  errors
+(add-hook 'python-mode-hook
+          (lambda () (local-set-key (kbd "C-c C-e") #'flymake-show-diagnostics-buffer)))
+
+;; Ret instead Yes/y
+(fset 'yes-or-no-p 'y-or-n-p)  ;; Ask for y/n instead of yes/no
+
